@@ -1,3 +1,4 @@
+import Motor from './Motor'
 import TreeNode from './TreeNode'
 import ElementManager from './ElementManager'
 import Node from './Node'
@@ -77,6 +78,9 @@ export function initImperativeBase() {
                 this._mountPromise = new Promise(r => this._resolveMountPromise = r)
 
                 this._waitForSceneThenResolveMountPromise()
+
+                this._sizeUpdateRenderTask = null
+                this._calculatedSize = { x:0, y:0, z:0 }
             }
 
             /**
@@ -123,6 +127,73 @@ export function initImperativeBase() {
                     this._resolveMountPromise(true)
                 }
 
+            }
+
+            /**
+             * Creates a render task to update this Sizeable and re-render. Also passes the
+             * updated size to children, so they can re-render as well, if needed.
+             *
+             * The HTML API MotorHTMLScene's size might change outside of an animation
+             * frame, so that's why we need to create a render task.
+             * @private
+             *
+             * @param {Object} size The new size of the scene, in the form {x:10, y:10}.
+             */
+            _handleSizeChange(newSize) {
+                this._calculatedSize = newSize
+
+                // If the last size update task wasn't fired yet, remove it and replace
+                // with the following new one.
+                if (this._sizeUpdateRenderTask)
+                    Motor.removeRenderTask(this._sizeUpdateRenderTask)
+
+                // TODO: make a one-shot render task helper so we don't have to
+                // explicitly remove a task that will run only once.
+                this._sizeUpdateRenderTask = Motor.addRenderTask(time => {
+                    console.log(' -- size change (in render task)!', newSize)
+
+                    this._updateSizing()
+
+                    Motor.removeRenderTask(this._sizeUpdateRenderTask)
+                    this._sizeUpdateRenderTask = null
+                })
+            }
+
+            _updateSizing() {
+
+                // TODO: We're calling this before traversing to children in
+                // the following loop, which means the children's `.actualSize`
+                // property can take advantage of cached properties on their
+                // parents if we add them, so that children don't traverse all
+                // the way back up the tree.
+                this._needsToBeRendered()
+
+                for (let i=0, len=this.children.length; i<len; i+=1) {
+                    const child = this.children[i]
+
+                    // if children have properties that depend on sizing, we
+                    // should update them. This prevents us from traversing the
+                    // whole tree, stopping at nodes that don't depend on
+                    // sizing (i.e. absolutely sized nodes with no align and no
+                    // mountPoint).
+                    if (
+                        child._properties.sizeMode.x === "proportional"
+                        || child._properties.sizeMode.y === "proportional"
+                        || child._properties.sizeMode.z === "proportional"
+
+                        || child._properties.align.x !== 0
+                        || child._properties.align.y !== 0
+                        || child._properties.align.z !== 0
+
+                        || child._properties.mountPoint.x !== 0
+                        || child._properties.mountPoint.y !== 0
+                        || child._properties.mountPoint.z !== 0
+                    ) {
+                        child._updateSizing()
+                    }
+
+                    //child._updateSizing()
+                }
             }
 
             /**

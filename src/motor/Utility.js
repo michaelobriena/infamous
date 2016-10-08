@@ -1,5 +1,7 @@
 import windowLoaded from 'awaitbox/dom/windowLoaded'
 
+console.log('Utility!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+
 function epsilon(value) {
     return Math.abs(value) < 0.000001 ? 0 : value;
 }

@@ -1,12 +1,14 @@
-import Sizeable from './Sizeable'
+import Sizeable, {initSizeable} from './Sizeable'
+import Observable from './Observable'
 import ImperativeBase, {initImperativeBase} from './ImperativeBase'
 import MotorHTMLScene from '../motor-html/scene'
 import documentReady from 'awaitbox/dom/documentReady'
 
+initSizeable()
 initImperativeBase()
 
 // Scene is Sizeable, which is currently a subset of Transformable.
-class Scene extends Sizeable.mixin(ImperativeBase) {
+class Scene extends Sizeable.mixin(Observable.mixin(ImperativeBase)) {
     constructor(options = {}) {
         super(options)
 
@@ -20,8 +22,11 @@ class Scene extends Sizeable.mixin(ImperativeBase) {
 
         // TODO: We need to render one time each time mountPromise is resolved,
         // not just this one time in the constructor.
-        // TODO: Does Scene need this call?
         this._needsToBeRendered()
+
+        // observe size changes on the scene element.
+        // TODO, we need an Event/Observable pattern, issue #54
+        this._el.element.on('sizechange', this._handleSizeChange.bind(this))
     }
 
     /**

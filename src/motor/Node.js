@@ -53,7 +53,10 @@ class Node extends Transformable.mixin(ImperativeBase) {
      * TODO If a setter is called over and over in a render task before the node
      * is mounted, then each tick will cause an await this.mountPromise, and
      * eventually all the bodies will fire all at once. I don't think we want
-     * this to happen.
+     * this to happen. However, it's harmless since the calls to
+     * super._needsToBeRendered after the first call are basically no-ops when
+     * the code path reaches Motor._setNodeToBeRendered. We need to evaluate
+     * this a little more...
      */
     async _needsToBeRendered() {
         if (!this._mounted) {

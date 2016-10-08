@@ -2,9 +2,10 @@
 import styles from './node-style'
 import Node from '../motor/Node'
 import Transformable from '../motor/Transformable'
-import Sizeable from '../motor/Sizeable'
+import Sizeable, {initSizeable} from '../motor/Sizeable'
 import MotorHTMLBase, {initMotorHTMLBase} from './base'
 
+initSizeable()
 initMotorHTMLBase()
 
 // XXX we'll export the class directly for v1 Custom Elements, and encourage
